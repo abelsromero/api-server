@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      database: jbcnconf
+
+jwt:
+  issuer: https://www.jbcnconf.com
+  secret: bezKoderSecretKey
+  expiration-in-sec: 3600
+
