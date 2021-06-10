@@ -1,7 +1,12 @@
 package org.bcnjug.jbcn.api.papers;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.security.web.header.Header;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.security.Principal;
@@ -21,9 +26,10 @@ public class PapersController {
     }
 
     @GetMapping(value = "/papers/{id}", produces = APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.OK)
-    Mono<Paper> getPaper(@PathVariable String id) {
-        return papersRepository.findById(id);
+    Mono<ResponseEntity<Paper>> getPaper(@PathVariable String id) {
+        return papersRepository.findById(id)
+                .flatMap( paper -> Mono.just(ResponseEntity.status(HttpStatus.OK).body(paper)))
+                .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).build()));
     }
 
     @PostMapping(value = "/papers", produces = APPLICATION_JSON_VALUE)
