@@ -1,29 +1,87 @@
 package org.bcnjug.jbcn.api.auth;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
+
+import java.util.stream.Collectors;
+
+import static org.springframework.security.oauth2.core.AuthorizationGrantType.PASSWORD;
 
 @RestController
 public class OAuthController {
 
-    private final ReactiveUserDetailsService userDetailsService;
+    private static final String ROLE_PREFIX = "ROLE_";
 
-    public OAuthController(ReactiveUserDetailsService userDetailsService) {
+    private final UsersRepository usersRepository;
+    private final ReactiveUserDetailsService userDetailsService;
+    private final JwtGenerator jwtGenerator;
+    private final PasswordEncoder passwordEncoder;
+
+    @Value("${auth.client-id}")
+    private String clientId;
+    @Value("${jwt.ttl-millis}")
+    private Integer tokenTtlMillis;
+
+    public OAuthController(UsersRepository usersRepository,
+                           ReactiveUserDetailsService userDetailsService,
+                           JwtGenerator jwtGenerator,
+                           PasswordEncoder passwordEncoder) {
+        this.usersRepository = usersRepository;
         this.userDetailsService = userDetailsService;
+        this.jwtGenerator = jwtGenerator;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/oauth/token")
-    String getToken(
+    public Mono<AuthorizationToken> getToken(
             @RequestParam(name = "grant_type") String grantType,
-            @RequestParam(name = "clientId") String clientId,
+            @RequestParam(name = "client_id") String clientId,
             @RequestParam(name = "username") String username,
             @RequestParam(name = "password") String password
     ) {
 
-        // TODO authenticate user
-        return JwtUtils.createJWS(username, 30 * 60 * 1000);
+        // TODO run as parallel mono
+        if (!StringUtils.hasText(grantType) || !PASSWORD.getValue().equals(grantType)) {
+            throw new RuntimeException("Unsupported grant_type");
+        }
+        if (!StringUtils.hasText(clientId) || !this.clientId.equals(clientId)) {
+            throw new RuntimeException("Unsupported client_id");
+        }
+
+        return usersRepository.findByUsername(username)
+                .switchIfEmpty(Mono.error(new UsernameNotFound()))
+                .flatMap(user -> isCorrectPassword(password, user) ? Mono.just(user) : Mono.empty())
+                .switchIfEmpty(Mono.error(new UsernameNotFound()))
+                .flatMap(user -> userDetailsService.findByUsername(user.getUsername()))
+                .map(userDetails -> userDetails.getAuthorities()
+                        .stream()
+                        .filter(grantedAuthority -> grantedAuthority.getAuthority().startsWith(ROLE_PREFIX))
+                        .map(grantedAuthority -> removePrefix(grantedAuthority))
+                        .collect(Collectors.toSet()))
+                .map(roles -> jwtGenerator.createJWS(username, roles, tokenTtlMillis))
+                .map(accessToken -> new AuthorizationToken(accessToken, "bearer", tokenTtlMillis));
     }
 
+    private boolean isCorrectPassword(String password, User user) {
+        return passwordEncoder.matches(password + user.getSalt(), user.getPassword());
+    }
+
+    private String removePrefix(GrantedAuthority grantedAuthority) {
+        String authority = grantedAuthority.getAuthority();
+        return authority.substring(authority.indexOf("_"));
+    }
+
+    @lombok.Value
+    class AuthorizationToken {
+        String access_token;
+        String token_type;
+        Integer expires_in;
+    }
 }

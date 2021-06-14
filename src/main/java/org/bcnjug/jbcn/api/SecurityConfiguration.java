@@ -3,13 +3,14 @@ package org.bcnjug.jbcn.api;
 import lombok.SneakyThrows;
 import org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService;
 import org.bcnjug.jbcn.api.auth.UsersRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -32,20 +33,28 @@ import java.util.stream.Collectors;
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
 
-    private static final String RESOURCES = System.getenv("HOME") + "/jbcnconf/api-server/src/main/resources/";
-
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    ReactiveUserDetailsService reactiveUserDetailsService(UsersRepository usersRepository) {
-        return new MongodbReactiveUserDetailsService(usersRepository);
+    MongodbReactiveUserDetailsService reactiveUserDetailsService(UsersRepository usersRepository) {
+        return new MongodbReactiveUserDetailsService(usersRepository, passwordEncoder());
     }
 
+//    @Bean
+//    public AuthenticationProvider daoAuthenticationProvider(ReactiveUserDetailsService userDetailsService) {
+//        DaoAuthenticationProvider provider =
+//                new DaoAuthenticationProvider();
+//        provider.setPasswordEncoder(passwordEncoder());
+//        provider.setUserDetailsService(userDetailsService);
+//        return provider;
+//    }
+
+
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity) {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity, RSAPublicKey publicKey) {
 
         return httpSecurity
                 .httpBasic().disable()
@@ -53,7 +62,7 @@ public class SecurityConfiguration {
                 .oauth2ResourceServer(resourceServer -> {
                     resourceServer.jwt(jwtSpec -> {
                         jwtSpec
-                                .publicKey(readPublicKey())
+                                .publicKey(publicKey)
                                 .jwtAuthenticationConverter(jwt -> {
                                     List<String> claimRoles = jwt.getClaimAsStringList("roles");
                                     if (claimRoles != null) {
@@ -71,7 +80,7 @@ public class SecurityConfiguration {
                 })
                 .authorizeExchange()
                 .pathMatchers(HttpMethod.POST, "/papers/**").authenticated()
-                .pathMatchers(HttpMethod.POST, "/oauth/token").permitAll()
+                .pathMatchers("/oauth/token").permitAll()
                 .anyExchange().authenticated()
                 .and()
                 .build();
@@ -79,10 +88,10 @@ public class SecurityConfiguration {
 
 
     @SneakyThrows
-    public static RSAPublicKey readPublicKey() {
-        String file = RESOURCES + "public_key.pem";
+    @Bean
+    RSAPublicKey readPublicKey(@Value("classpath:public_key.pem") Path privateKey) {
 
-        String key = new String(Files.readAllBytes(Path.of(file)), Charset.defaultCharset());
+        String key = new String(Files.readAllBytes(privateKey), Charset.defaultCharset());
 
         String publicKeyPEM = key
                 .replace("-----BEGIN PUBLIC KEY-----", "")
@@ -97,10 +106,10 @@ public class SecurityConfiguration {
     }
 
     @SneakyThrows
-    public static RSAPrivateKey readPrivateKey() {
-        String file = RESOURCES + "private_key.pem";
+    @Bean
+    RSAPrivateKey readPrivateKey(@Value("classpath:private_key.pem") Path privateKey) {
 
-        String key = new String(Files.readAllBytes(Path.of(file)), Charset.defaultCharset());
+        String key = new String(Files.readAllBytes(privateKey), Charset.defaultCharset());
 
         String publicKeyPEM = key
                 .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -113,5 +122,4 @@ public class SecurityConfiguration {
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decode);
         return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
     }
-
 }

@@ -1,7 +1,6 @@
-package org.bcnjug.jbcn.api;
+package org.bcnjug.jbcn.api.papers;
 
-import org.bcnjug.jbcn.api.auth.JwtUtils;
-import org.bcnjug.jbcn.api.papers.Paper;
+import org.bcnjug.jbcn.api.auth.JwtGenerator;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 
+import java.util.Set;
+
 @SpringBootTest
 @AutoConfigureWebTestClient
 class PaperControllerTest {
@@ -19,19 +20,23 @@ class PaperControllerTest {
     private static final String MONGODB_ID_PATTERN = "[a-f\\d]{24}";
 
     @Autowired
+    JwtGenerator jwtGenerator;
+
+    @Autowired
     WebTestClient webTestClient;
 
     @Test
         // We can use this to avoid sending token header in tests, but note the Authentication instance is
         // UsernamePasswordAuthenticationToken instead of JWTAuthenticationToken 
-//    @WithMockUser(username = "test-user", roles = {"HELPER"})
+        // @WithMockUser(username = "test-user", roles = {"HELPER"})
     void should_create_a_paper() {
+
         Paper paper = Paper.builder()
                 .edition("2021")
                 .title("Amazing paper")
                 .build();
 
-        String token = JwtUtils.createJWS("2221", 60 * 60 * 1000);
+        String token = jwtGenerator.createJWS("2221", Set.of(""), 60 * 60 * 1000);
         webTestClient.post()
                 .uri("/papers")
                 .accept(MediaType.APPLICATION_JSON)

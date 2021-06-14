@@ -23,8 +23,8 @@ public class Paper implements Tracked {
     private String id;
     
     private String createdBy;
-    private String updatedBy;
     private LocalDateTime createdOn;
+    private String updatedBy;
     private LocalDateTime updatedOn;
 
     private String title;

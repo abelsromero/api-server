@@ -2,9 +2,16 @@ spring:
   data:
     mongodb:
       database: jbcnconf
+server:
+  error:
+    include-message: always
+    
+auth:
+  client-id: 189e2d22-2da5-44fb-ab0a-d5a57fac4d50
 
 jwt:
   issuer: https://www.jbcnconf.com
   secret: bezKoderSecretKey
-  expiration-in-sec: 3600
+  ttl-millis: 3600
+
 
