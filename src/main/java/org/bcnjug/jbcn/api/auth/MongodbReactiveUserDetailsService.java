@@ -48,7 +48,7 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
         return usersRepository.findByUsername(user.getUsername())
                 .flatMap(mongodbUse -> {
                     final LocalDateTime now = LocalDateTime.now();
-                    final String salt = generateSalt();
+                    final var salt = generateSalt();
                     org.bcnjug.jbcn.api.auth.User newUser = new org.bcnjug.jbcn.api.auth.User(
                             mongodbUse.getId(),
                             mongodbUse.getCreatedBy(),
@@ -65,18 +65,19 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
                 .map(this::mapUser);
     }
 
-    public Mono<org.bcnjug.jbcn.api.auth.User> saveUser(String username, String email, Set<String> roles, String password) {
+    public Mono<org.bcnjug.jbcn.api.auth.User> saveUser(String username, String email, Set<String> roles, String password,
+                                                        String creator) {
         // TODO Set createdBy & updatedBy
         // NOTE: not sure we really need salting. encoder generated different chain every time
-        final String salt = generateSalt();
+        final var salt = generateSalt();
         String encodedPassword = passwordEncoder.encode(password + salt);
 
         final LocalDateTime now = LocalDateTime.now();
         org.bcnjug.jbcn.api.auth.User user = new org.bcnjug.jbcn.api.auth.User(
                 null,
-                null,
+                creator,
                 now,
-                null,
+                creator,
                 now,
                 username,
                 email,

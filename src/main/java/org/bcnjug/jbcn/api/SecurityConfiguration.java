@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -43,16 +42,6 @@ public class SecurityConfiguration {
         return new MongodbReactiveUserDetailsService(usersRepository, passwordEncoder());
     }
 
-//    @Bean
-//    public AuthenticationProvider daoAuthenticationProvider(ReactiveUserDetailsService userDetailsService) {
-//        DaoAuthenticationProvider provider =
-//                new DaoAuthenticationProvider();
-//        provider.setPasswordEncoder(passwordEncoder());
-//        provider.setUserDetailsService(userDetailsService);
-//        return provider;
-//    }
-
-
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity, RSAPublicKey publicKey) {
 
@@ -81,6 +70,7 @@ public class SecurityConfiguration {
                 .authorizeExchange()
                 .pathMatchers(HttpMethod.POST, "/papers/**").authenticated()
                 .pathMatchers("/oauth/token").permitAll()
+                .pathMatchers("/users").hasAuthority("ROLE_ADMIN")
                 .anyExchange().authenticated()
                 .and()
                 .build();
