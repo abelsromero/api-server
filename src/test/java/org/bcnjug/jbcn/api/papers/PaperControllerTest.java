@@ -13,11 +13,11 @@ import org.springframework.web.reactive.function.BodyInserters;
 
 import java.util.Set;
 
+import static org.bcnjug.jbcn.api.common.TestData.MONGODB_ID_PATTERN;
+
 @SpringBootTest
 @AutoConfigureWebTestClient
 class PaperControllerTest {
-
-    private static final String MONGODB_ID_PATTERN = "[a-f\\d]{24}";
 
     @Autowired
     JwtGenerator jwtGenerator;

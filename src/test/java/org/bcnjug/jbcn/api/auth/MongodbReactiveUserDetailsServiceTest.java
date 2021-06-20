@@ -29,7 +29,7 @@ public class MongodbReactiveUserDetailsServiceTest {
         String username = randomUsername();
         String password = "my-password";
 
-        User createdUser = userDetailsService.saveUser(username, null, null, password)
+        User createdUser = userDetailsService.saveUser(username, null, null, password, null)
                 .block();
 
         assertThat(createdUser.getId()).isNotEmpty();
@@ -51,7 +51,7 @@ public class MongodbReactiveUserDetailsServiceTest {
         String password = "my-password";
         String newPassword = "my-new-password";
 
-        userDetailsService.saveUser(username, null, null, password)
+        userDetailsService.saveUser(username, null, null, password, null)
                 .flatMap(user -> userDetailsService.findByUsername(user.getUsername()))
                 .flatMap(userDetails -> userDetailsService.updatePassword(userDetails, newPassword))
                 .block();

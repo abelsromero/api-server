@@ -35,7 +35,7 @@ public class OAuthControllerIntTest {
     void before() {
         String email = "user@supermail.com";
         Set<String> roles = Set.of("USER", "READER", "WRITER");
-        userDetailsService.saveUser(TEST_USERNAME, email, roles, TEST_PASSWORD).block();
+        userDetailsService.saveUser(TEST_USERNAME, email, roles, TEST_PASSWORD, null).block();
     }
 
     @Test
