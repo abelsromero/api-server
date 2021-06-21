@@ -1,6 +1,5 @@
 package org.bcnjug.jbcn.api.auth;
 
-import com.mongodb.MongoWriteException;
 import lombok.Data;
 import org.bcnjug.jbcn.api.common.RequiredParameter;
 import org.springframework.dao.DuplicateKeyException;

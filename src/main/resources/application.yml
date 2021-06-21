@@ -1,3 +1,16 @@
+management:
+  endpoints:
+    jmx:
+      exposure:
+        exclude: '*'
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
 spring:
   data:
     mongodb:
@@ -6,7 +19,7 @@ spring:
 server:
   error:
     include-message: always
-    
+
 auth:
   client-id: 189e2d22-2da5-44fb-ab0a-d5a57fac4d50
 

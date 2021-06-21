@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -46,7 +47,23 @@ public class SecurityConfiguration {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity, RSAPublicKey publicKey) {
 
         return httpSecurity
-                .httpBasic().disable()
+                .httpBasic(httpBasic -> {
+                    httpBasic.authenticationManager(authentication -> {
+                        // TODO use passwordEncoder and set credentials in envvar
+                        return Mono.fromSupplier(() -> {
+                            if (authentication instanceof UsernamePasswordAuthenticationToken
+                                    && authentication.getPrincipal().equals("actuator")
+                                    && authentication.getCredentials().equals("actuator")) {
+                                return actuatorAuthorized(authentication.getPrincipal());
+                            }
+
+                            return unauthenticated(authentication.getPrincipal());
+                        });
+                    });
+                })
+                .authorizeExchange()
+                .pathMatchers("/actuator/**").authenticated()
+                .and()
                 .csrf().disable()
                 .oauth2ResourceServer(resourceServer -> {
                     resourceServer.jwt(jwtSpec -> {
@@ -74,6 +91,14 @@ public class SecurityConfiguration {
                 .anyExchange().authenticated()
                 .and()
                 .build();
+    }
+
+    private UsernamePasswordAuthenticationToken actuatorAuthorized(Object principal) {
+        return new UsernamePasswordAuthenticationToken(principal, null, List.of(new SimpleGrantedAuthority("ACTUATOR")));
+    }
+
+    private UsernamePasswordAuthenticationToken unauthenticated(Object principal) {
+        return new UsernamePasswordAuthenticationToken(principal, null);
     }
 
 
