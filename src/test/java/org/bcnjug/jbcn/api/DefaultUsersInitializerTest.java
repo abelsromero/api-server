@@ -1,6 +1,5 @@
 package org.bcnjug.jbcn.api;
 
-import org.bcnjug.jbcn.api.DefaultUsersHandler.DefaultUsersInitializer;
 import org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService;
 import org.bcnjug.jbcn.api.auth.Role;
 import org.bcnjug.jbcn.api.auth.User;
@@ -22,21 +21,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataMongoTest
 @Import({
         BCryptPasswordEncoder.class,
-        MongodbReactiveUserDetailsService.class,
-        DefaultUsersInitializer.class,
+        MongodbReactiveUserDetailsService.class
 })
 public class DefaultUsersInitializerTest {
 
     static final String ADMIN_ROLE = Role.ADMIN.toString();
 
     @Autowired
-    DefaultUsersInitializer defaultUsersInitializer;
+    UsersRepository usersRepository;
 
     @Autowired
-    UsersRepository usersRepository;
+    MongodbReactiveUserDetailsService userDetailsService;
+
+    DefaultUsersInitializer defaultUsersInitializer;
 
     @BeforeEach
     void setup() {
+        defaultUsersInitializer = new DefaultUsersInitializer(usersRepository, userDetailsService, "12345678");
         StepVerifier.create(usersRepository.deleteAll())
                 .verifyComplete();
     }
@@ -52,9 +53,9 @@ public class DefaultUsersInitializerTest {
 
         StepVerifier.create(defaultUsersInitializer.setupDefaultUsers())
                 .assertNext(user -> {
-                    assertAdminUsernameAndEmail(user, "admin", "admin@no-reply.com");
+                    assertAdminUsernameAndEmail(user, "dadmin", "admin@no-reply.com");
                     assertThat(user.getCreatedBy())
-                            .isEqualTo("admin");
+                            .isEqualTo("dadmin");
                     assertThat(user.getCreatedOn())
                             .isEqualTo(user.getUpdatedOn())
                             .isAfter(now);

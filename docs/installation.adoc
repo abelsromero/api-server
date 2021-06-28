@@ -1,0 +1,17 @@
+= Installation
+:icons: font
+
+== Default admin user
+
+First time you will need to create an administrator user called `dadmin`.
+This user will be used to create extra users including custom administrators.
+
+To create it, run with the following configurations properties:
+
+- `defaults.admin.create`: set to `true`
+- `defaults.admin.password`: set to the password you want to use.
+
+Once created you can remove the properties. 
+Also, for security reasons it is highly recommended to create custom administrators and remove the default afterwards.
+
+WARNING: A new administrator user will ONLY be created when no other administrators exist.
