@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -33,20 +35,18 @@ public class MongodbReactiveUserDetailsServiceTest {
         String username = randomUsername();
         String password = "my-password";
 
-        User createdUser = userDetailsService.saveUser(username, null, null, password, null)
-                .block();
+        StepVerifier.create(userDetailsService.createUser(username, null, null, password, null))
+                .assertNext(createdUser -> {
+                    assertThat(createdUser.getId()).isNotEmpty();
+                    assertThat(createdUser.getCreatedOn()).isAfter(now);
+                    assertThat(createdUser.getUpdatedOn()).isAfter(now);
 
-        assertThat(createdUser.getId()).isNotEmpty();
-        assertThat(createdUser.getCreatedOn()).isAfter(now);
-        assertThat(createdUser.getUpdatedOn()).isAfter(now);
+                    assertThat(createdUser.getSalt()).isNotEmpty();
+                    assertThat(createdUser.getPassword()).isNotEqualTo(password);
 
-        assertThat(createdUser.getSalt()).isNotEmpty();
-        assertThat(createdUser.getPassword()).isNotEqualTo(password);
-
-        String rawPassword = password + createdUser.getSalt();
-        assertThat(passwordEncoder.matches(rawPassword, createdUser.getPassword())).isTrue();
-
-        System.out.println(usersRepository.count().block());
+                    String rawPassword = password + stringify(createdUser.getSalt());
+                    assertThat(passwordEncoder.matches(rawPassword, createdUser.getPassword())).isTrue();
+                });
     }
 
     @Test
@@ -55,21 +55,25 @@ public class MongodbReactiveUserDetailsServiceTest {
         String password = "my-password";
         String newPassword = "my-new-password";
 
-        userDetailsService.saveUser(username, null, null, password, null)
+        UserDetails testUsername = userDetailsService.createUser(username, null, null, password, null)
                 .flatMap(user -> userDetailsService.findByUsername(user.getUsername()))
-                .flatMap(userDetails -> userDetailsService.updatePassword(userDetails, newPassword))
                 .block();
 
-        User updatedUser = usersRepository.findByUsername(username)
-                .block();
+        StepVerifier.create(userDetailsService.updatePassword(testUsername, newPassword))
+                .expectComplete();
 
-        String rawPassword = newPassword + updatedUser.getSalt();
-        assertThat(passwordEncoder.matches(rawPassword, updatedUser.getPassword())).isTrue();
-
-        System.out.println(usersRepository.count().block());
+        StepVerifier.create(usersRepository.findByUsername(username))
+                .assertNext(updatedUser -> {
+                    String rawPassword = newPassword + stringify(updatedUser.getSalt());
+                    assertThat(passwordEncoder.matches(rawPassword, updatedUser.getPassword())).isTrue();
+                });
     }
 
     private String randomUsername() {
         return "username-" + UUID.randomUUID();
+    }
+
+    private String stringify(byte[] salt) {
+        return new String(salt);
     }
 }

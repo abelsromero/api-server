@@ -37,7 +37,7 @@ public class UsersController {
         if (!StringUtils.hasText(userDto.getPassword()))
             throw new RequiredParameter("password");
 
-        return userDetailsService.saveUser(userDto.getUsername(), userDto.getEmail(), userDto.getRoles(), userDto.getPassword(), principal.getName())
+        return userDetailsService.createUser(userDto.getUsername(), userDto.getEmail(), userDto.getRoles(), userDto.getPassword(), principal.getName())
                 .onErrorMap(DuplicateKeyException.class, e -> {
                     System.out.println("ssss");
                     return new InvalidUsername();

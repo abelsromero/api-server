@@ -33,7 +33,7 @@ public class DefaultUsersInitializer {
         return usersRepository.findByRolesContains(Role.ADMIN.toString())
                 .switchIfEmpty(Mono.defer(() -> {
                     final String adminUsername = "dadmin";
-                    return userDetailsService.saveUser(
+                    return userDetailsService.createUser(
                             adminUsername,
                             "admin@no-reply.com",
                             Set.of(Role.ADMIN.toString()),

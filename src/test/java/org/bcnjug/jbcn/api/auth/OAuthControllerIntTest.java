@@ -1,6 +1,5 @@
 package org.bcnjug.jbcn.api.auth;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +17,7 @@ public class OAuthControllerIntTest {
 
     static final String TEST_USERNAME = "test_username";
     static final String TEST_PASSWORD = "test_password";
+    static final String TEST_EMAIL = "user@supermail.com";
 
     @Value("${auth.client-id}")
     String clientId;
@@ -31,15 +31,11 @@ public class OAuthControllerIntTest {
     MongodbReactiveUserDetailsService userDetailsService;
 
 
-    @BeforeEach
-    void before() {
-        String email = "user@supermail.com";
-        Set<String> roles = Set.of("USER", "READER", "WRITER");
-        userDetailsService.saveUser(TEST_USERNAME, email, roles, TEST_PASSWORD, null).block();
-    }
-
     @Test
     void should_get_token() {
+
+        Set<String> roles = Set.of("USER", "READER", "WRITER");
+        userDetailsService.createUser(TEST_USERNAME, TEST_EMAIL, roles, TEST_PASSWORD, null).block();
 
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/oauth/token")
