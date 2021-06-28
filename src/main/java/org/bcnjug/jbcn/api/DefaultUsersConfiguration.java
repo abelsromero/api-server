@@ -17,7 +17,7 @@ public class DefaultUsersConfiguration {
     @Bean
     DefaultUsersInitializer defaultUsersInitializer(UsersRepository usersRepository,
                                                     MongodbReactiveUserDetailsService userDetailsService,
-                                                    @Value("${defaults.admin.password}") String adminPassword) {
+                                                    @Value("${api-server.defaults.admin.password}") String adminPassword) {
         return new DefaultUsersInitializer(usersRepository, userDetailsService, adminPassword);
     }
 

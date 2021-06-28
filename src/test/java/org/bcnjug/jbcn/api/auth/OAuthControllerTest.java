@@ -29,9 +29,9 @@ import static org.mockito.Mockito.when;
 //@ContextConfiguration(classes = {SecurityConfiguration.class})
 public class OAuthControllerTest {
 
-    @Value("${auth.client-id}")
+    @Value("${api-server.auth.client-id}")
     String clientId;
-    @Value("${jwt.ttl-millis}")
+    @Value("${api-server.jwt.ttl-millis}")
     Long tokenTtlMillis;
 
     @Autowired

@@ -19,9 +19,9 @@ public class OAuthControllerIntTest {
     static final String TEST_PASSWORD = "test_password";
     static final String TEST_EMAIL = "user@supermail.com";
 
-    @Value("${auth.client-id}")
+    @Value("${api-server.auth.client-id}")
     String clientId;
-    @Value("${jwt.ttl-millis}")
+    @Value("${api-server.jwt.ttl-millis}")
     Long tokenTtlMillis;
 
     @Autowired

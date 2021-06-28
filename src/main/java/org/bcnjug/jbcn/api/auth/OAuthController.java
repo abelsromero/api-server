@@ -25,9 +25,9 @@ public class OAuthController {
     private final JwtGenerator jwtGenerator;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${auth.client-id}")
+    @Value("${api-server.auth.client-id}")
     private String clientId;
-    @Value("${jwt.ttl-millis}")
+    @Value("${api-server.jwt.ttl-millis}")
     private Integer tokenTtlMillis;
 
     public OAuthController(UsersRepository usersRepository,
