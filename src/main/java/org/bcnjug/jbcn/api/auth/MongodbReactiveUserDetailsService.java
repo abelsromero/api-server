@@ -14,6 +14,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService.SaltGenerator.generateSalt;
+import static org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService.SaltGenerator.stringify;
+
 public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsService, ReactiveUserDetailsPasswordService {
 
     private final UsersRepository usersRepository;
@@ -46,32 +49,34 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
     public Mono<UserDetails> updatePassword(UserDetails user, String newPassword) {
         // TODO Set updatedBy
         return usersRepository.findByUsername(user.getUsername())
-                .flatMap(mongodbUse -> {
+                .flatMap(mongodbUser -> {
+                    final byte[] salt = generateSalt();
+                    final String encodePassword = passwordEncoder.encode(newPassword + stringify(salt));
                     final LocalDateTime now = LocalDateTime.now();
-                    final var salt = generateSalt();
+
                     org.bcnjug.jbcn.api.auth.User newUser = new org.bcnjug.jbcn.api.auth.User(
-                            mongodbUse.getId(),
-                            mongodbUse.getCreatedBy(),
-                            mongodbUse.getCreatedOn(),
-                            mongodbUse.getUpdatedBy(),
+                            mongodbUser.getId(),
+                            mongodbUser.getCreatedBy(),
+                            mongodbUser.getCreatedOn(),
+                            mongodbUser.getUpdatedBy(),
                             now,
-                            mongodbUse.getUsername(),
-                            mongodbUse.getEmail(),
-                            mongodbUse.getRoles(),
-                            passwordEncoder.encode(newPassword + salt),
+                            mongodbUser.getUsername(),
+                            mongodbUser.getEmail(),
+                            mongodbUser.getRoles(),
+                            encodePassword,
                             salt);
                     return usersRepository.save(newUser);
                 })
                 .map(this::mapUser);
     }
 
-    public Mono<org.bcnjug.jbcn.api.auth.User> saveUser(String username, String email, Set<String> roles, String password,
-                                                        String creator) {
+    public Mono<org.bcnjug.jbcn.api.auth.User> createUser(String username, String email, Set<String> roles, String password,
+                                                          String creator) {
         // NOTE: not sure we really need salting. encoder generated different chain every time
-        final var salt = generateSalt();
-        String encodedPassword = passwordEncoder.encode(password + salt);
-
+        final byte[] salt = generateSalt();
+        final String encodedPassword = passwordEncoder.encode(password + stringify(salt));
         final LocalDateTime now = LocalDateTime.now();
+
         org.bcnjug.jbcn.api.auth.User user = new org.bcnjug.jbcn.api.auth.User(
                 null,
                 creator,
@@ -84,14 +89,21 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
                 encodedPassword,
                 salt);
 
-        return usersRepository.save(user);
+        return usersRepository.insert(user);
     }
 
-    private static final Random random = new Random();
+    static class SaltGenerator {
 
-    private String generateSalt() {
-        byte[] salt = new byte[16];
-        random.nextBytes(salt);
-        return new String(salt);
+        private static final Random random = new Random();
+
+        static byte[] generateSalt() {
+            byte[] salt = new byte[16];
+            random.nextBytes(salt);
+            return salt;
+        }
+
+        static String stringify(byte[] salt) {
+            return new String(salt);
+        }
     }
 }

@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.stream.Collectors;
 
+import static org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService.SaltGenerator.stringify;
 import static org.springframework.security.oauth2.core.AuthorizationGrantType.PASSWORD;
 
 @RestController
@@ -47,7 +48,6 @@ public class OAuthController {
             @RequestParam(name = "password") String password
     ) {
 
-        // TODO run as parallel mono
         if (!StringUtils.hasText(grantType) || !PASSWORD.getValue().equals(grantType)) {
             throw new RuntimeException("Unsupported grant_type");
         }
@@ -56,21 +56,24 @@ public class OAuthController {
         }
 
         return usersRepository.findByUsername(username)
-                .switchIfEmpty(Mono.error(new UsernameNotFound()))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new UsernameNotFound())))
                 .flatMap(user -> isCorrectPassword(password, user) ? Mono.just(user) : Mono.empty())
-                .switchIfEmpty(Mono.error(new UsernameNotFound()))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new UsernameNotFound())))
                 .flatMap(user -> userDetailsService.findByUsername(user.getUsername()))
                 .map(userDetails -> userDetails.getAuthorities()
                         .stream()
                         .filter(grantedAuthority -> grantedAuthority.getAuthority().startsWith(ROLE_PREFIX))
                         .map(grantedAuthority -> removePrefix(grantedAuthority))
                         .collect(Collectors.toSet()))
-                .map(roles -> jwtGenerator.createJWS(username, roles, tokenTtlMillis))
-                .map(accessToken -> new AuthorizationToken(accessToken, "bearer", tokenTtlMillis));
+                .map(roles -> {
+                    String token = jwtGenerator.createJWS(username, roles, tokenTtlMillis);
+                    return new AuthorizationToken(token, "bearer", tokenTtlMillis);
+                });
     }
 
     private boolean isCorrectPassword(String password, User user) {
-        return passwordEncoder.matches(password + user.getSalt(), user.getPassword());
+        String salt = stringify(user.getSalt());
+        return passwordEncoder.matches(password + salt, user.getPassword());
     }
 
     private String removePrefix(GrantedAuthority grantedAuthority) {

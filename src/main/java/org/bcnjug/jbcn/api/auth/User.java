@@ -33,6 +33,6 @@ public class User implements Tracked {
     private Set<String> roles;
 
     private String password;
-    private String salt;
+    private byte[] salt;
 
 }
