@@ -10,7 +10,6 @@ management:
     health:
       probes:
         enabled: true
-
 spring:
   data:
     mongodb:
@@ -19,13 +18,12 @@ spring:
 server:
   error:
     include-message: always
-
+# Custom properties
+# TODO create common prefix
 auth:
   client-id: 189e2d22-2da5-44fb-ab0a-d5a57fac4d50
-
 jwt:
   issuer: https://www.jbcnconf.com
   secret: bezKoderSecretKey
   ttl-millis: 3600
-
 

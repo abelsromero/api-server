@@ -67,7 +67,6 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
 
     public Mono<org.bcnjug.jbcn.api.auth.User> saveUser(String username, String email, Set<String> roles, String password,
                                                         String creator) {
-        // TODO Set createdBy & updatedBy
         // NOTE: not sure we really need salting. encoder generated different chain every time
         final var salt = generateSalt();
         String encodedPassword = passwordEncoder.encode(password + salt);

@@ -2,7 +2,9 @@ package org.bcnjug.jbcn.api.auth;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
@@ -10,17 +12,19 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@DataMongoTest
+@Import({
+        BCryptPasswordEncoder.class,
+        MongodbReactiveUserDetailsService.class
+})
 public class MongodbReactiveUserDetailsServiceTest {
 
     @Autowired
     UsersRepository usersRepository;
-
-    @Autowired
-    MongodbReactiveUserDetailsService userDetailsService;
-
     @Autowired
     PasswordEncoder passwordEncoder;
+    @Autowired
+    MongodbReactiveUserDetailsService userDetailsService;
 
 
     @Test
