@@ -21,6 +21,8 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 @AutoConfigureWebTestClient
 @TestPropertySource(properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration")
+// Not working, use @TestPropertySource
+// @EnableAutoConfiguration(exclude = EmbeddedMongoAutoConfiguration.class)
 // Does not work: all calls return 404
 //@ExtendWith(SpringExtension.class)
 //@WebFluxTest(controllers = OAuthController.class)
@@ -140,7 +142,7 @@ public class OAuthControllerTest {
                 .jsonPath("$.token_type").isEqualTo("bearer")
                 .jsonPath("$.expires_in").isEqualTo(tokenTtlMillis);
     }
-    
+
     private User testUser(String testUsername) {
         return new User("", "", LocalDateTime.now(), "", LocalDateTime.now(), testUsername, "mail", Set.of("USER"), "", "");
     }
