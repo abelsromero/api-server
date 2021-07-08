@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnProperty(value = "defaults.admin.create", havingValue = "true")
+@ConditionalOnProperty(value = "api-server.defaults.admin.create", havingValue = "true")
 @Slf4j
 public class DefaultUsersConfiguration {
 
