@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -39,8 +40,8 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    MongodbReactiveUserDetailsService reactiveUserDetailsService(UsersRepository usersRepository) {
-        return new MongodbReactiveUserDetailsService(usersRepository, passwordEncoder());
+    ReactiveUserDetailsService reactiveUserDetailsService(UsersRepository usersRepository, PasswordEncoder passwordEncoder) {
+        return new MongodbReactiveUserDetailsService(usersRepository, passwordEncoder);
     }
 
     @Bean
