@@ -78,7 +78,7 @@ public class OAuthController {
 
     private String removePrefix(GrantedAuthority grantedAuthority) {
         String authority = grantedAuthority.getAuthority();
-        return authority.substring(authority.indexOf("_"));
+        return authority.substring(authority.indexOf("_") + 1);
     }
 
     @lombok.Value

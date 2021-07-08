@@ -1,5 +1,7 @@
 package org.bcnjug.jbcn.api.auth;
 
+import com.nimbusds.jwt.SignedJWT;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +16,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Set;
+import java.util.function.Consumer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -141,6 +146,38 @@ public class OAuthControllerTest {
                 .jsonPath("$.access_token").isNotEmpty()
                 .jsonPath("$.token_type").isEqualTo("bearer")
                 .jsonPath("$.expires_in").isEqualTo(tokenTtlMillis);
+    }
+
+    @Test
+    void should_get_token_with_valid_roles() {
+        final String testUsername = "test_user";
+
+        when(usersRepository.findByUsername(testUsername))
+                .thenReturn(Mono.just(testUser(testUsername)));
+        when(passwordEncoder.matches(Mockito.any(), Mockito.any()))
+                .thenReturn(Boolean.TRUE);
+
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/oauth/token")
+                        .queryParam("grant_type", "password")
+                        .queryParam("client_id", clientId)
+                        .queryParam("username", testUsername)
+                        .queryParam("password", "test_password")
+                        .build())
+                .accept(MediaType.ALL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.access_token")
+                .value((Consumer<String>) token -> assertConainsRoles(token, "USER"));
+    }
+
+    @SneakyThrows
+    private void assertConainsRoles(String token, String... roles) {
+        Collection<String> claimRoles = (Collection<String>) SignedJWT.parse(token)
+                .getJWTClaimsSet()
+                .getClaim("roles");
+        assertThat(claimRoles).containsExactly(roles);
     }
 
     private User testUser(String testUsername) {
