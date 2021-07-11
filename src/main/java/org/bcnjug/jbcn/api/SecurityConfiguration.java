@@ -17,14 +17,18 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +48,7 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity, RSAPublicKey publicKey) {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity, List<RSAPublicKey> publicKey) {
 
         return httpSecurity
                 .httpBasic(httpBasic -> {
@@ -68,7 +72,7 @@ public class SecurityConfiguration {
                 .oauth2ResourceServer(resourceServer -> {
                     resourceServer.jwt(jwtSpec -> {
                         jwtSpec
-                                .publicKey(publicKey)
+                                .publicKey(publicKey.get(0))
                                 .jwtAuthenticationConverter(jwt -> {
                                     List<String> claimRoles = jwt.getClaimAsStringList("roles");
                                     if (claimRoles != null) {
@@ -88,7 +92,7 @@ public class SecurityConfiguration {
                 .pathMatchers(HttpMethod.POST, "/papers/**").authenticated()
                 .pathMatchers("/oauth/token").permitAll()
                 .pathMatchers("/users").hasAuthority("ROLE_ADMIN")
-                .anyExchange().authenticated()
+                .anyExchange().permitAll()
                 .and()
                 .build();
     }
@@ -104,8 +108,17 @@ public class SecurityConfiguration {
 
     @SneakyThrows
     @Bean
-    RSAPublicKey readPublicKey(@Value("classpath:public_key.pem") Path privateKey) {
+    List<RSAPublicKey> readPublicKeys(@Value("classpath:key00/public_key.pem") Path privateKey0, @Value("classpath:key01/public_key.pem") Path privateKey1) {
+        return Arrays.asList(getPublicKey(privateKey0), getPublicKey(privateKey1));
+    }
 
+    @SneakyThrows
+    @Bean
+    RSAPrivateKey readPrivateKey(@Value("classpath:key00/private_key.pem") Path privateKey) {
+        return getPrivateKey(privateKey);
+    }
+
+    private RSAPublicKey getPublicKey(Path privateKey) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         String key = new String(Files.readAllBytes(privateKey), Charset.defaultCharset());
 
         String publicKeyPEM = key
@@ -120,10 +133,7 @@ public class SecurityConfiguration {
         return (RSAPublicKey) keyFactory.generatePublic(keySpec);
     }
 
-    @SneakyThrows
-    @Bean
-    RSAPrivateKey readPrivateKey(@Value("classpath:private_key.pem") Path privateKey) {
-
+    private RSAPrivateKey getPrivateKey(Path privateKey) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         String key = new String(Files.readAllBytes(privateKey), Charset.defaultCharset());
 
         String publicKeyPEM = key
