@@ -44,7 +44,7 @@ public class JwtGenerator {
         }
         JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256)
                 .type(JOSEObjectType.JWT)
-                .keyID(buildKid(privateKey.getEncoded()))
+                .keyID("id01")
                 .build();
         JWSObject jwsObject = new JWSObject(header, new Payload(claimsBuilder.build().toJSONObject()));
         jwsObject.sign(new RSASSASigner(privateKey));
