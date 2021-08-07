@@ -1,0 +1,38 @@
+== API POC
+
+Test using a JWK endpoint instead of
+
+TLDR; Works! Start jwk-server, auth-server, create token and then create a user successfully.
+Modify kid in token in `JwtGenerator` and then try to crete a user, to see it fail with:
+
+```
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Bearer error="invalid_token", error_description="Failed to validate the token", error_uri="https://tools.ietf.org/html/rfc6750#section-3.1"
+```
+
+== API USAGE
+
+
+=== Get Token
+
+[source,bash]
+----
+CLIENT_ID="189e2d22-2da5-44fb-ab0a-d5a57fac4d50"
+API_USERNAME="dadmin"
+API_PASSWORD="12345678asr"
+
+curl "http://localhost:8080/oauth/token?grant_type=password&client_id=$CLIENT_ID&username=$API_USERNAME&password=$API_PASSWORD" | jq
+----
+
+// TOKEN=$(curl -s "http://localhost:8080/oauth/token?grant_type=password&client_id=$CLIENT_ID&username=$API_USERNAME&password=$API_PASSWORD" | jq -r '.access_token')
+
+=== Create User
+
+curl -X POST 'http://localhost:8080/users' \
+-H "Authorization: Bearer $TOKEN" \
+-H 'Content-Type: application/json' \
+ -d '{
+"username":"my_nam2e222",
+"email": "mymail",
+"password":"12345678"
+ }' -v

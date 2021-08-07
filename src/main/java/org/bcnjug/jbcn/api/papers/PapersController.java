@@ -1,6 +1,7 @@
 package org.bcnjug.jbcn.api.papers;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -22,8 +23,10 @@ public class PapersController {
 
     @GetMapping(value = "/papers/{id}", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    Mono<Paper> getPaper(@PathVariable String id) {
-        return papersRepository.findById(id);
+    Mono<ResponseEntity<Paper>> getPaper(@PathVariable String id) {
+        return papersRepository.findById(id)
+                .map(paper -> ResponseEntity.ok(paper))
+                .switchIfEmpty(Mono.fromSupplier(() -> ResponseEntity.notFound().build()));
     }
 
     @PostMapping(value = "/papers", produces = APPLICATION_JSON_VALUE)
