@@ -29,8 +29,11 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
                 .map(this::mapUser);
     }
 
-    private User mapUser(org.bcnjug.jbcn.api.auth.User user) {
-        return new User(user.getUsername(), user.getPassword(), rolesToAuthorities(user.getRoles()));
+    private UserDetails mapUser(org.bcnjug.jbcn.api.auth.User user) {
+        return User.withUsername(user.getUsername())
+                .authorities(rolesToAuthorities(user.getRoles()))
+                .password(user.getPassword())
+                .build();
     }
 
     private List<SimpleGrantedAuthority> rolesToAuthorities(Set<String> roles) {
