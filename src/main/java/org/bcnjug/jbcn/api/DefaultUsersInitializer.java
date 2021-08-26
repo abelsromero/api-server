@@ -41,5 +41,4 @@ public class DefaultUsersInitializer {
                             adminUsername);
                 }));
     }
-
 }

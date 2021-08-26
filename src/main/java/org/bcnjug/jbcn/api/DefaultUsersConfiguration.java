@@ -8,6 +8,11 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
+
+import java.util.UUID;
+
+import static org.bcnjug.jbcn.api.DefaultUsersConfiguration.DefaultUserPasswordGenerator.generateDefaultPassword;
 
 @Configuration
 @ConditionalOnProperty(value = "api-server.defaults.admin.create", havingValue = "true")
@@ -17,13 +22,28 @@ public class DefaultUsersConfiguration {
     @Bean
     DefaultUsersInitializer defaultUsersInitializer(UsersRepository usersRepository,
                                                     MongodbReactiveUserDetailsService userDetailsService,
-                                                    @Value("${api-server.defaults.admin.password}") String adminPassword) {
-        return new DefaultUsersInitializer(usersRepository, userDetailsService, adminPassword);
+                                                    @Value("${api-server.defaults.admin.password:#{null}}") String adminPassword) {
+
+        final String sanitizedPassword = generateDefaultPassword(adminPassword);
+        return new DefaultUsersInitializer(usersRepository, userDetailsService, sanitizedPassword);
     }
+
 
     @Bean
     ApplicationRunner defaultUserHandler(DefaultUsersInitializer initializer) {
         return args -> initializer.setupDefaultUsers()
                 .subscribe(user -> logger.info("Default user(s) created"));
+    }
+
+    final static class DefaultUserPasswordGenerator {
+
+        static String generateDefaultPassword(String basePassword) {
+            if (!StringUtils.hasText(basePassword)) {
+                final String generatedPassword = UUID.randomUUID().toString();
+                logger.info("Using generated security password: " + generatedPassword);
+                return generatedPassword;
+            }
+            return basePassword;
+        }
     }
 }
