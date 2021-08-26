@@ -10,12 +10,8 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService.SaltGenerator.generateSalt;
-import static org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService.SaltGenerator.stringify;
 
 public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsService, ReactiveUserDetailsPasswordService {
 
@@ -50,8 +46,7 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
         // TODO Set updatedBy
         return usersRepository.findByUsername(user.getUsername())
                 .flatMap(mongodbUser -> {
-                    final byte[] salt = generateSalt();
-                    final String encodePassword = passwordEncoder.encode(newPassword + stringify(salt));
+                    final String encodePassword = passwordEncoder.encode(newPassword);
                     final LocalDateTime now = LocalDateTime.now();
 
                     org.bcnjug.jbcn.api.auth.User newUser = new org.bcnjug.jbcn.api.auth.User(
@@ -63,8 +58,7 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
                             mongodbUser.getUsername(),
                             mongodbUser.getEmail(),
                             mongodbUser.getRoles(),
-                            encodePassword,
-                            salt);
+                            encodePassword);
                     return usersRepository.save(newUser);
                 })
                 .map(this::mapUser);
@@ -72,9 +66,7 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
 
     public Mono<org.bcnjug.jbcn.api.auth.User> createUser(String username, String email, Set<String> roles, String password,
                                                           String creator) {
-        // NOTE: not sure we really need salting. encoder generated different chain every time
-        final byte[] salt = generateSalt();
-        final String encodedPassword = passwordEncoder.encode(password + stringify(salt));
+        final String encodedPassword = passwordEncoder.encode(password);
         final LocalDateTime now = LocalDateTime.now();
 
         org.bcnjug.jbcn.api.auth.User user = new org.bcnjug.jbcn.api.auth.User(
@@ -86,24 +78,8 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
                 username,
                 email,
                 roles,
-                encodedPassword,
-                salt);
+                encodedPassword);
 
         return usersRepository.insert(user);
-    }
-
-    static class SaltGenerator {
-
-        private static final Random random = new Random();
-
-        static byte[] generateSalt() {
-            byte[] salt = new byte[16];
-            random.nextBytes(salt);
-            return salt;
-        }
-
-        static String stringify(byte[] salt) {
-            return new String(salt);
-        }
     }
 }
