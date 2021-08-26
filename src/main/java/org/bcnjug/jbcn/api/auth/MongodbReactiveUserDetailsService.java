@@ -17,10 +17,14 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
 
     private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordPolicyValidator passwordPolicyValidator;
 
-    public MongodbReactiveUserDetailsService(UsersRepository usersRepository, PasswordEncoder passwordEncoder) {
+    public MongodbReactiveUserDetailsService(UsersRepository usersRepository,
+                                             PasswordEncoder passwordEncoder,
+                                             PasswordPolicyValidator passwordPolicyValidator) {
         this.usersRepository = usersRepository;
         this.passwordEncoder = passwordEncoder;
+        this.passwordPolicyValidator = passwordPolicyValidator;
     }
 
     @Override
@@ -69,6 +73,11 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
 
     public Mono<org.bcnjug.jbcn.api.auth.User> createUser(String username, String email, Set<String> roles, String password,
                                                           String creator) {
+
+        if (!passwordPolicyValidator.isValid(password)) {
+            return Mono.error(InvalidUsername::new);
+        }
+
         final String encodedPassword = passwordEncoder.encode(password);
         final LocalDateTime now = LocalDateTime.now();
 

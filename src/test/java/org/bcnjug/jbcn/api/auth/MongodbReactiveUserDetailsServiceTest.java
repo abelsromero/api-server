@@ -47,6 +47,23 @@ public class MongodbReactiveUserDetailsServiceTest {
     }
 
     @Test
+    void should_fail_creating_user_if_password_does_not_match_policy() {
+        LocalDateTime now = LocalDateTime.now();
+        String username = randomUsername();
+        String plainPassword = "easypassword";
+
+        StepVerifier.create(userDetailsService.createUser(username, null, null, plainPassword, null))
+                .assertNext(createdUser -> {
+                    assertThat(createdUser.getId()).isNotEmpty();
+                    assertThat(createdUser.getCreatedOn()).isAfter(now);
+                    assertThat(createdUser.getUpdatedOn()).isAfter(now);
+                    assertThat(createdUser.getPassword()).isNotEqualTo(plainPassword);
+
+                    assertThat(passwordEncoder.matches(plainPassword, createdUser.getPassword())).isTrue();
+                });
+    }
+    
+    @Test
     void should_update_password() {
         String username = randomUsername();
         String password = "my-password";
