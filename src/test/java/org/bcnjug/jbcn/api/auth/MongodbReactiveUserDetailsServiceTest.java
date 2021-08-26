@@ -33,19 +33,16 @@ public class MongodbReactiveUserDetailsServiceTest {
     void should_create_a_user() {
         LocalDateTime now = LocalDateTime.now();
         String username = randomUsername();
-        String password = "my-password";
+        String plainPassword = "my-plainPassword";
 
-        StepVerifier.create(userDetailsService.createUser(username, null, null, password, null))
+        StepVerifier.create(userDetailsService.createUser(username, null, null, plainPassword, null))
                 .assertNext(createdUser -> {
                     assertThat(createdUser.getId()).isNotEmpty();
                     assertThat(createdUser.getCreatedOn()).isAfter(now);
                     assertThat(createdUser.getUpdatedOn()).isAfter(now);
+                    assertThat(createdUser.getPassword()).isNotEqualTo(plainPassword);
 
-                    assertThat(createdUser.getSalt()).isNotEmpty();
-                    assertThat(createdUser.getPassword()).isNotEqualTo(password);
-
-                    String rawPassword = password + stringify(createdUser.getSalt());
-                    assertThat(passwordEncoder.matches(rawPassword, createdUser.getPassword())).isTrue();
+                    assertThat(passwordEncoder.matches(plainPassword, createdUser.getPassword())).isTrue();
                 });
     }
 
@@ -63,17 +60,10 @@ public class MongodbReactiveUserDetailsServiceTest {
                 .expectComplete();
 
         StepVerifier.create(usersRepository.findByUsername(username))
-                .assertNext(updatedUser -> {
-                    String rawPassword = newPassword + stringify(updatedUser.getSalt());
-                    assertThat(passwordEncoder.matches(rawPassword, updatedUser.getPassword())).isTrue();
-                });
+                .assertNext(updatedUser -> assertThat(passwordEncoder.matches(newPassword, updatedUser.getPassword())).isTrue());
     }
 
     private String randomUsername() {
         return "username-" + UUID.randomUUID();
-    }
-
-    private String stringify(byte[] salt) {
-        return new String(salt);
     }
 }

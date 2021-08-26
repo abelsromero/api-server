@@ -12,7 +12,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.stream.Collectors;
 
-import static org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService.SaltGenerator.stringify;
 import static org.springframework.security.oauth2.core.AuthorizationGrantType.PASSWORD;
 
 @RestController
@@ -72,8 +71,7 @@ public class OAuthController {
     }
 
     private boolean isCorrectPassword(String password, User user) {
-        String salt = stringify(user.getSalt());
-        return passwordEncoder.matches(password + salt, user.getPassword());
+        return passwordEncoder.matches(password, user.getPassword());
     }
 
     private String removePrefix(GrantedAuthority grantedAuthority) {

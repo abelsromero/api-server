@@ -169,11 +169,11 @@ public class OAuthControllerTest {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.access_token")
-                .value((Consumer<String>) token -> assertConainsRoles(token, "USER"));
+                .value((Consumer<String>) token -> assertContainsRoles(token, "USER"));
     }
 
     @SneakyThrows
-    private void assertConainsRoles(String token, String... roles) {
+    private void assertContainsRoles(String token, String... roles) {
         Collection<String> claimRoles = (Collection<String>) SignedJWT.parse(token)
                 .getJWTClaimsSet()
                 .getClaim("roles");
@@ -181,6 +181,6 @@ public class OAuthControllerTest {
     }
 
     private User testUser(String testUsername) {
-        return new User("", "", LocalDateTime.now(), "", LocalDateTime.now(), testUsername, "mail", Set.of("USER"), "", new byte[]{});
+        return new User("", "", LocalDateTime.now(), "", LocalDateTime.now(), testUsername, "mail", Set.of("USER"), "");
     }
 }
