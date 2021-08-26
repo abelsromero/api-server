@@ -181,6 +181,14 @@ public class OAuthControllerTest {
     }
 
     private User testUser(String testUsername) {
-        return new User("", "", LocalDateTime.now(), "", LocalDateTime.now(), testUsername, "mail", Set.of("USER"), "");
+        LocalDateTime creationTime = LocalDateTime.now();
+        return User.builder()
+                .username(testUsername)
+                .email("mail")
+                .roles(Set.of("USER"))
+                .password("")
+                .createdOn(creationTime)
+                .updatedOn(creationTime)
+                .build();
     }
 }
