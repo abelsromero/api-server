@@ -1,4 +1,4 @@
-== API POC
+= API POC
 
 Test using a JWK endpoint instead of
 
@@ -36,3 +36,16 @@ curl -X POST 'http://localhost:8080/users' \
 "email": "mymail",
 "password":"12345678"
  }' -v
+
+
+== Admin user
+
+At least 1 admin user is required in order to setup the system.
+By default, no users are created, but an administrator can be created setting the properties:
+
+ api-server.defaults.admin.create=true
+
+This will create an administrator with a random password accessible in the logs.
+If you want to set the password directly use:
+
+ api-server.defaults.admin.password="my-password"
