@@ -1,5 +1,6 @@
 package org.bcnjug.jbcn.api;
 
+import org.bcnjug.jbcn.api.auth.PasswordPolicy;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,8 +13,9 @@ public class DefaultUsersConfigurationTest {
     void should_generate_random_admin_password_when_not_set() {
         String generatedPassword = generateDefaultPassword(null);
 
-        assertThat(generatedPassword)
-                .matches("([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})");
+        final var passwordValidator = new PasswordPolicy.Validator();
+        assertThat(passwordValidator.isValid(generatedPassword))
+                .isTrue();
     }
 
     @Test

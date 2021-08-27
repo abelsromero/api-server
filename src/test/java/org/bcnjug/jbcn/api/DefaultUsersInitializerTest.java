@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -17,11 +18,11 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.bcnjug.jbcn.api.DefaultUsersConfiguration.DefaultUserPasswordGenerator.generateDefaultPassword;
 
 @DataMongoTest
 @Import({
-        BCryptPasswordEncoder.class,
-        MongodbReactiveUserDetailsService.class
+        BCryptPasswordEncoder.class
 })
 public class DefaultUsersInitializerTest {
 
@@ -31,13 +32,16 @@ public class DefaultUsersInitializerTest {
     UsersRepository usersRepository;
 
     @Autowired
+    PasswordEncoder passwordEncoder;
+
     MongodbReactiveUserDetailsService userDetailsService;
 
     DefaultUsersInitializer defaultUsersInitializer;
 
     @BeforeEach
     void setup() {
-        defaultUsersInitializer = new DefaultUsersInitializer(usersRepository, userDetailsService, "12345678");
+        userDetailsService = new MongodbReactiveUserDetailsService(usersRepository, passwordEncoder, password -> true);
+        defaultUsersInitializer = new DefaultUsersInitializer(usersRepository, userDetailsService, generateDefaultPassword(null));
         StepVerifier.create(usersRepository.deleteAll())
                 .verifyComplete();
     }
@@ -68,10 +72,10 @@ public class DefaultUsersInitializerTest {
     void should_not_create_default_admin_user_when_one_already_exists() {
 
         usersRepository.save(User.builder()
-                .username("any-name")
-                .email("any-email@test.com")
-                .roles(Set.of(Role.ADMIN.toString()))
-                .build())
+                        .username("any-name")
+                        .email("any-email@test.com")
+                        .roles(Set.of(Role.ADMIN.toString()))
+                        .build())
                 .block();
 
         StepVerifier.create(usersRepository.findByRolesContains(ADMIN_ROLE))
@@ -88,16 +92,16 @@ public class DefaultUsersInitializerTest {
     void should_not_create_default_admin_user_when_many_already_exist() {
 
         usersRepository.saveAll(Flux.just(
-                User.builder()
-                        .username("any-name")
-                        .email("any-email@test.com")
-                        .roles(Set.of(Role.ADMIN.toString()))
-                        .build(),
-                User.builder()
-                        .username("another-name")
-                        .email("another-email@test.com")
-                        .roles(Set.of(Role.ADMIN.toString()))
-                        .build()))
+                        User.builder()
+                                .username("any-name")
+                                .email("any-email@test.com")
+                                .roles(Set.of(Role.ADMIN.toString()))
+                                .build(),
+                        User.builder()
+                                .username("another-name")
+                                .email("another-email@test.com")
+                                .roles(Set.of(Role.ADMIN.toString()))
+                                .build()))
                 .collectList()
                 .block();
 

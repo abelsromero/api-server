@@ -11,17 +11,18 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsService, ReactiveUserDetailsPasswordService {
 
     private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
-    private final PasswordPolicyValidator passwordPolicyValidator;
+    private final Function<String, Boolean> passwordPolicyValidator;
 
     public MongodbReactiveUserDetailsService(UsersRepository usersRepository,
                                              PasswordEncoder passwordEncoder,
-                                             PasswordPolicyValidator passwordPolicyValidator) {
+                                             Function<String, Boolean> passwordPolicyValidator) {
         this.usersRepository = usersRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicyValidator = passwordPolicyValidator;
@@ -74,8 +75,8 @@ public class MongodbReactiveUserDetailsService implements ReactiveUserDetailsSer
     public Mono<org.bcnjug.jbcn.api.auth.User> createUser(String username, String email, Set<String> roles, String password,
                                                           String creator) {
 
-        if (!passwordPolicyValidator.isValid(password)) {
-            return Mono.error(InvalidUsername::new);
+        if (!passwordPolicyValidator.apply(password)) {
+            return Mono.error(InvalidPassword::new);
         }
 
         final String encodedPassword = passwordEncoder.encode(password);
