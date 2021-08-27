@@ -2,6 +2,7 @@ package org.bcnjug.jbcn.api;
 
 import lombok.SneakyThrows;
 import org.bcnjug.jbcn.api.auth.MongodbReactiveUserDetailsService;
+import org.bcnjug.jbcn.api.auth.PasswordPolicy;
 import org.bcnjug.jbcn.api.auth.UsersRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -40,7 +41,8 @@ public class SecurityConfiguration {
 
     @Bean
     MongodbReactiveUserDetailsService reactiveUserDetailsService(UsersRepository usersRepository) {
-        return new MongodbReactiveUserDetailsService(usersRepository, passwordEncoder());
+        var passwordValidator = new PasswordPolicy.Validator();
+        return new MongodbReactiveUserDetailsService(usersRepository, passwordEncoder(), passwordValidator::isValid);
     }
 
     @Bean

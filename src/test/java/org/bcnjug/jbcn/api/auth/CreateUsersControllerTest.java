@@ -86,7 +86,7 @@ public class CreateUsersControllerTest {
         final Map<String, Object> userRequest = Map.of(
                 "username", "user",
                 "email", "user@mail.com",
-                "password", "12345678",
+                "password", "Pass12345678",
                 "roles", List.of("USER", "COOL")
         );
         webTestClient.post()
@@ -113,7 +113,7 @@ public class CreateUsersControllerTest {
         final Map<String, Object> userRequest = Map.of(
                 "username", username,
                 "email", "user@mail.com",
-                "password", "12345678",
+                "password", "Pass12345678",
                 "roles", List.of("USER", "COOL")
         );
         webTestClient.post()

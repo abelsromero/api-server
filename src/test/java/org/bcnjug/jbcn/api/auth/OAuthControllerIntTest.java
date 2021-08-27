@@ -16,7 +16,7 @@ import java.util.Set;
 public class OAuthControllerIntTest {
 
     static final String TEST_USERNAME = "test_username";
-    static final String TEST_PASSWORD = "test_password";
+    static final String TEST_PASSWORD = "T3s_P4ssw0rd";
     static final String TEST_EMAIL = "user@supermail.com";
 
     @Value("${api-server.auth.client-id}")
