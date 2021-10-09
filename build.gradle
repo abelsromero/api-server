@@ -9,7 +9,8 @@ plugins {
 
 group = 'org.bcnjug.jbcn'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+
+sourceCompatibility = '17'
 
 repositories {
     maven { url 'https://repo.spring.io/snapshot' }
