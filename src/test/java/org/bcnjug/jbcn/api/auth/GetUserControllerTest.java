@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -21,9 +22,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.bcnjug.jbcn.api.auth.Role.HELPER;
 import static org.bcnjug.jbcn.api.auth.Role.SPEAKER;
 
-@SpringBootTest
+// NOTE: port=0 should not be necessary but seems to fix 'state should be: open'
+@SpringBootTest(properties = "spring.data.mongodb.port=0")
 @AutoConfigureWebTestClient
-public class GetUserControllerTest {
+public final class GetUserControllerTest {
 
     @Autowired
     WebTestClient webTestClient;
@@ -39,6 +41,7 @@ public class GetUserControllerTest {
     @Test
     @WithMockUser(username = "test-user", roles = {"ADMIN"})
     void should_get_a_user() {
+
         final User testUser = createRandomUser();
 
         webTestClient.get()
@@ -112,6 +115,17 @@ public class GetUserControllerTest {
                 .updatedOn(now)
                 .build();
         return usersRepository.save(testUser).block();
+    }
+
+    @TestConfiguration
+    public static class MyTestContext {
+//
+//        @Bean
+//        MongoClientSettings mongoClientSettings() {
+//            return MongoClientSettings.builder()
+//                    .applyToConnectionPoolSettings(block -> block.applySettings())
+//                    .build();
+//        }
     }
 }
 
