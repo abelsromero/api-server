@@ -1,6 +1,7 @@
 package org.bcnjug.jbcn.api.auth;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -27,6 +28,11 @@ public class CreateUsersControllerTest {
 
     @Autowired
     UsersRepository usersRepository;
+
+    @BeforeEach
+    public void setup() {
+        usersRepository.deleteAll();
+    }
 
     @Test
     @WithMockUser(username = "test_user", roles = {})

@@ -2,6 +2,7 @@ package org.bcnjug.jbcn.api.auth;
 
 import lombok.Data;
 import org.bcnjug.jbcn.api.common.RequiredParameter;
+import org.bcnjug.jbcn.api.common.RestCollection;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.security.Principal;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,13 +50,27 @@ public class UsersController {
 
     @GetMapping(value = "/users/{id}", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public Mono<ResponseEntity<User>> getPaper(@PathVariable String id) {
+    public Mono<ResponseEntity<User>> getUser(@PathVariable String id) {
         return usersRepository.findById(id)
                 .map(user -> {
                     user.setPassword(null);
                     return ResponseEntity.ok(user);
                 })
                 .switchIfEmpty(Mono.fromSupplier(() -> ResponseEntity.notFound().build()));
+    }
+
+    @GetMapping(value = "/users", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<RestCollection> getAllUsers() {
+        // TODO Obtain actual total of repository data.
+        // For now this works because we are not filtering/paging results
+        return usersRepository.findAll()
+                .sort(Comparator.comparing(User::getCreatedOn))
+                .map(user -> {
+                    user.setPassword(null);
+                    return user;
+                }).collectList()
+                .map(users -> new RestCollection(users, users.size()));
     }
 
     @Data
