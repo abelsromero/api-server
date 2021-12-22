@@ -1,8 +1,7 @@
 package org.bcnjug.jbcn.api.papers;
 
-import lombok.Data;
-import org.assertj.core.api.Assertions;
 import org.bcnjug.jbcn.api.auth.JwtGenerator;
+import org.bcnjug.jbcn.api.common.IdResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,10 +88,5 @@ class PaperControllerTest {
                 .exchange()
                 .expectStatus().isNotFound()
                 .expectBody().isEmpty();
-    }
-
-    @Data
-    static class IdResponse {
-        String id;
     }
 }
