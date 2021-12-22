@@ -4,24 +4,27 @@ import lombok.Data;
 import org.bcnjug.jbcn.api.common.RequiredParameter;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 @RestController
 public class UsersController {
 
     private final MongodbReactiveUserDetailsService userDetailsService;
+    private final UsersRepository usersRepository;
 
-    public UsersController(MongodbReactiveUserDetailsService userDetailsService) {
+    public UsersController(MongodbReactiveUserDetailsService userDetailsService,
+                           UsersRepository usersRepository) {
         this.userDetailsService = userDetailsService;
+        this.usersRepository = usersRepository;
     }
 
     @PostMapping("/users")
@@ -38,12 +41,20 @@ public class UsersController {
             throw new RequiredParameter("password");
 
         return userDetailsService.createUser(userDto.getUsername(), userDto.getEmail(), userDto.getRoles(), userDto.getPassword(), principal.getName())
-                .onErrorMap(DuplicateKeyException.class, e -> {
-                    System.out.println("ssss");
-                    return new InvalidUsername();
-                })
+                .onErrorMap(DuplicateKeyException.class, e -> new InvalidUsername())
                 .map(user -> user.getId())
                 .map(id -> Map.of("id", id));
+    }
+
+    @GetMapping(value = "/users/{id}", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<ResponseEntity<User>> getPaper(@PathVariable String id) {
+        return usersRepository.findById(id)
+                .map(user -> {
+                    user.setPassword(null);
+                    return ResponseEntity.ok(user);
+                })
+                .switchIfEmpty(Mono.fromSupplier(() -> ResponseEntity.notFound().build()));
     }
 
     @Data
